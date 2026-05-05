@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zufallsversuche</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --surface2: #1e1e24;
+    --border: #2a2a35;
+    --accent1: #f0e040;
+    --accent2: #40d4f0;
+    --accent3: #f07040;
+    --accent4: #80e890;
+    --text: #e8e8f0;
+    --muted: #7070a0;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 40px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  header h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.5rem;
+    color: var(--accent1);
+    letter-spacing: -1px;
+  }
+
+  header span {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-weight: 300;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    padding: 32px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: 1fr; padding: 20px; }
+    header { padding: 20px; }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card-header {
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .card-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .icon {
+    font-size: 1.5rem;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+
+  .card h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .card-n {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+    background: var(--surface2);
+    padding: 4px 10px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .controls {
+    padding: 14px 22px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 7px 14px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    letter-spacing: 0.5px;
+  }
+
+  .btn:active { transform: scale(0.96); }
+
+  .btn-run {
+    background: var(--accent2);
+    color: #0d0d0f;
+    border-color: var(--accent2);
+  }
+  .btn-run:hover { filter: brightness(1.15); }
+
+  .btn-reset {
+    background: transparent;
+    color: var(--accent3);
+    border-color: var(--accent3);
+    margin-left: auto;
+  }
+  .btn-reset:hover { background: var(--accent3); color: #0d0d0f; }
+
+  .chart-area {
+    padding: 20px 22px 18px;
+    flex: 1;
+  }
+
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+  }
+
+  .y-axis {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 28px;
+    width: 36px;
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: space-between;
+  }
+
+  .y-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-align: right;
+    padding-right: 6px;
+    line-height: 1;
+  }
+
+  .chart-inner {
+    margin-left: 40px;
+    position: relative;
+  }
+
+  .gridlines {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    pointer-events: none;
+  }
+
+  .gridline {
+    position: absolute;
+    left: 0; right: 0;
+    height: 1px;
+    background: var(--border);
+    opacity: 0.6;
+  }
+
+  .bars-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 200px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .bar-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    justify-content: flex-end;
+  }
+
+  .bar-outer {
+    width: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    transition: height 0.3s ease;
+  }
+
+  .bar {
+    width: 100%;
+    border-radius: 5px 5px 0 0;
+    position: relative;
+    transition: height 0.35s cubic-bezier(.4,0,.2,1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+    min-height: 0;
+  }
+
+  .bar-pct {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.58rem;
+    font-weight: 700;
+    color: rgba(0,0,0,0.75);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+    pointer-events: none;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    display: none;
+  }
+
+  .bar.tall .bar-pct { display: block; }
+
+  .bar-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+    margin-top: 6px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .bar-count {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 3px;
+    text-align: center;
+  }
+
+  /* color per card */
+  .c1 .bar { background: var(--accent1); }
+  .c2 .bar { background: var(--accent2); }
+  .c3 .bar { background: var(--accent3); }
+  .c4 .bar { background: var(--accent4); }
+  .c1 .icon { background: rgba(240,224,64,0.12); }
+  .c2 .icon { background: rgba(64,212,240,0.12); }
+  .c3 .icon { background: rgba(240,112,64,0.12); }
+  .c4 .icon { background: rgba(128,232,144,0.12); }
+  .c1 h2 { color: var(--accent1); }
+  .c2 h2 { color: var(--accent2); }
+  .c3 h2 { color: var(--accent3); }
+  .c4 h2 { color: var(--accent4); }
+  .c1 .btn-run { background: var(--accent1); border-color: var(--accent1); }
+  .c2 .btn-run { background: var(--accent2); border-color: var(--accent2); }
+  .c3 .btn-run { background: var(--accent3); border-color: var(--accent3); }
+  .c4 .btn-run { background: var(--accent4); border-color: var(--accent4); }
+
+  /* flash on throw */
+  @keyframes flash {
+    0% { opacity: 0.3; }
+    100% { opacity: 1; }
+  }
+  .bars-container.animate { animation: flash 0.2s ease; }
+
+  /* last result badge */
+  .last-result {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    padding: 0 22px 12px;
+    min-height: 24px;
+  }
+  .last-result span { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚀ Zufallsversuche</h1>
+  <span>Empirische Wahrscheinlichkeit — Interaktives Labor</span>
+</header>
+
+<div class="grid">
+
+  <!-- 1. MÜNZWURF -->
+  <div class="card c1" id="card-coin">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="icon">🪙</div>
+        <h2>Münzwurf</h2>
+      </div>
+      <div class="card-n" id="n-coin">n = 0</div>
+    </div>
+    <div class="controls">
+      <button class="btn btn-run" onclick="run('coin',1)">1×</button>
+      <button class="btn btn-run" onclick="run('coin',10)">10×</button>
+      <button class="btn btn-run" onclick="run('coin',100)">100×</button>
+      <button class="btn btn-reset" onclick="reset('coin')">↺ Reset</button>
+    </div>
+    <div class="last-result" id="last-coin">—</div>
+    <div class="chart-area">
+      <div class="chart-wrap">
+        <div class="chart-inner">
+          <div class="gridlines" id="gl-coin"></div>
+          <div class="bars-container" id="bars-coin"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. WÜRFELWURF W6 -->
+  <div class="card c2" id="card-dice">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="icon">🎲</div>
+        <h2>Würfelwurf (W6)</h2>
+      </div>
+      <div class="card-n" id="n-dice">n = 0</div>
+    </div>
+    <div class="controls">
+      <button class="btn btn-run" onclick="run('dice',1)">1×</button>
+      <button class="btn btn-run" onclick="run('dice',10)">10×</button>
+      <button class="btn btn-run" onclick="run('dice',100)">100×</button>
+      <button class="btn btn-reset" onclick="reset('dice')">↺ Reset</button>
+    </div>
+    <div class="last-result" id="last-dice">—</div>
+    <div class="chart-area">
+      <div class="chart-wrap">
+        <div class="chart-inner">
+          <div class="gridlines" id="gl-dice"></div>
+          <div class="bars-container" id="bars-dice"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. HEFTZWECKENWURF -->
+  <div class="card c3" id="card-pin">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="icon">📌</div>
+        <h2>Heftzweckenwurf</h2>
+      </div>
+      <div class="card-n" id="n-pin">n = 0</div>
+    </div>
+    <div class="controls">
+      <button class="btn btn-run" onclick="run('pin',1)">1×</button>
+      <button class="btn btn-run" onclick="run('pin',10)">10×</button>
+      <button class="btn btn-run" onclick="run('pin',100)">100×</button>
+      <button class="btn btn-reset" onclick="reset('pin')">↺ Reset</button>
+    </div>
+    <div class="last-result" id="last-pin">—</div>
+    <div class="chart-area">
+      <div class="chart-wrap">
+        <div class="chart-inner">
+          <div class="gridlines" id="gl-pin"></div>
+          <div class="bars-container" id="bars-pin"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. ZWEI WÜRFEL -->
+  <div class="card c4" id="card-2dice">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="icon">🎲🎲</div>
+        <h2>Zwei Würfel</h2>
+      </div>
+      <div class="card-n" id="n-2dice">n = 0</div>
+    </div>
+    <div class="controls">
+      <button class="btn btn-run" onclick="run('2dice',1)">1×</button>
+      <button class="btn btn-run" onclick="run('2dice',10)">10×</button>
+      <button class="btn btn-run" onclick="run('2dice',100)">100×</button>
+      <button class="btn btn-reset" onclick="reset('2dice')">↺ Reset</button>
+    </div>
+    <div class="last-result" id="last-2dice">—</div>
+    <div class="chart-area">
+      <div class="chart-wrap">
+        <div class="chart-inner">
+          <div class="gridlines" id="gl-2dice"></div>
+          <div class="bars-container" id="bars-2dice"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────
+const state = {
+  coin:  { counts: {Kopf:0, Zahl:0}, total: 0 },
+  dice:  { counts: {1:0,2:0,3:0,4:0,5:0,6:0}, total: 0 },
+  pin:   { counts: {'Spitze oben':0, 'Spitze seitl.':0}, total: 0 },
+  '2dice': { counts: {}, total: 0 }
+};
+
+// Init 2-dice counts 2..12
+for (let s = 2; s <= 12; s++) state['2dice'].counts[s] = 0;
+
+// Pin probability (realistic ~40% point up)
+const PIN_UP = 0.40;
+
+// ── Simulation ─────────────────────────────────────────────────────────
+function throwOnce(id) {
+  switch(id) {
+    case 'coin':
+      return Math.random() < 0.5 ? 'Kopf' : 'Zahl';
+    case 'dice':
+      return String(Math.floor(Math.random()*6)+1);
+    case 'pin':
+      return Math.random() < PIN_UP ? 'Spitze oben' : 'Spitze seitl.';
+    case '2dice':
+      return String((Math.floor(Math.random()*6)+1) + (Math.floor(Math.random()*6)+1));
+  }
+}
+
+function run(id, n) {
+  const s = state[id];
+  let last = '';
+  for (let i = 0; i < n; i++) {
+    const r = throwOnce(id);
+    s.counts[r]++;
+    s.total++;
+    last = r;
+  }
+  const el = document.getElementById('last-'+id);
+  const label = id === '2dice' ? 'Augensumme' : 'Ergebnis';
+  el.innerHTML = n === 1
+    ? `Letztes Ergebnis: <span>${label === 'Augensumme' ? '🎲 Summe ' : ''}${last}</span>`
+    : `${n}× geworfen — letztes: <span>${last}</span>`;
+  document.getElementById('n-'+id).textContent = `n = ${s.total}`;
+  renderChart(id);
+}
+
+function reset(id) {
+  const s = state[id];
+  for (const k in s.counts) s.counts[k] = 0;
+  s.total = 0;
+  document.getElementById('n-'+id).textContent = 'n = 0';
+  document.getElementById('last-'+id).innerHTML = '—';
+  renderChart(id);
+}
+
+// ── Chart Rendering ────────────────────────────────────────────────────
+const BAR_H = 200; // px
+
+function niceMax(val) {
+  if (val === 0) return 10;
+  const step = val <= 50 ? 10 : 100;
+  return Math.ceil(val / step) * step;
+}
+
+function renderChart(id) {
+  const s = state[id];
+  const keys = Object.keys(s.counts);
+  const maxVal = Math.max(...Object.values(s.counts), 1);
+  const yMax = niceMax(maxVal);
+
+  // y-axis gridlines
+  const glEl = document.getElementById('gl-' + id);
+  const step = yMax <= 50 ? 10 : (yMax <= 500 ? 100 : 1000);
+  const ticks = [];
+  for (let v = 0; v <= yMax; v += step) ticks.push(v);
+
+  glEl.innerHTML = '';
+  glEl.style.height = BAR_H + 'px';
+  ticks.forEach(v => {
+    const pct = (v / yMax) * 100;
+    const line = document.createElement('div');
+    line.className = 'gridline';
+    line.style.bottom = pct + '%';
+    glEl.appendChild(line);
+  });
+
+  // bars
+  const container = document.getElementById('bars-' + id);
+  container.innerHTML = '';
+  container.style.height = BAR_H + 'px';
+  container.classList.remove('animate');
+  void container.offsetWidth; // reflow
+  container.classList.add('animate');
+
+  keys.forEach(k => {
+    const val = s.counts[k];
+    const pct = s.total > 0 ? ((val / s.total) * 100).toFixed(1) : '0.0';
+    const heightPct = (val / yMax) * 100;
+    const barPx = (heightPct / 100) * BAR_H;
+
+    const group = document.createElement('div');
+    group.className = 'bar-group';
+
+    const countEl = document.createElement('div');
+    countEl.className = 'bar-count';
+    countEl.textContent = val > 0 ? val : '';
+
+    const bar = document.createElement('div');
+    bar.className = 'bar' + (barPx > 22 ? ' tall' : '');
+    bar.style.height = barPx + 'px';
+
+    const pctEl = document.createElement('div');
+    pctEl.className = 'bar-pct';
+    pctEl.textContent = pct + '%';
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'bar-label';
+    labelEl.textContent = k;
+    labelEl.title = k;
+
+    bar.appendChild(pctEl);
+    group.appendChild(countEl);
+    group.appendChild(bar);
+    group.appendChild(labelEl);
+    container.appendChild(group);
+  });
+}
+
+// ── Init all charts ────────────────────────────────────────────────────
+['coin','dice','pin','2dice'].forEach(id => renderChart(id));
+</script>
+</body>
+</html>
